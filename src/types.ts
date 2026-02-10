@@ -62,6 +62,7 @@ export type PRMetrics = {
   deletions: number;
   filesChanged: number;
   reviewRounds: number;
+  reviewCount: number;
   churnRatio: number | null;
   timeToFirstReviewHours: number | null;
   timeToMergeHours: number | null;

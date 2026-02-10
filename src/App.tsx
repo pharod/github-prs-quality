@@ -217,6 +217,9 @@ const App = () => {
         const reviewRounds = reviews.filter(
           (review) => review.state === "CHANGES_REQUESTED"
         ).length;
+        const reviewCount = reviews.filter(
+          (review) => review.userLogin !== author && review.submittedAt
+        ).length;
 
         const score = scorePr({
           additions: details.additions,
@@ -239,6 +242,7 @@ const App = () => {
           deletions: details.deletions,
           filesChanged: details.changedFiles,
           reviewRounds,
+          reviewCount,
           churnRatio,
           timeToFirstReviewHours,
           timeToMergeHours,
@@ -325,7 +329,7 @@ const App = () => {
           yAxisID: "y2",
         },
         {
-          label: "Median Review Rounds",
+          label: "Median Changes Requested",
           data: weeklyStats.map((week) => week.medianReviewRounds),
           borderColor: "#a0610a",
           backgroundColor: "rgba(160,97,10,0.12)",
@@ -510,7 +514,8 @@ const App = () => {
                   <th>Score</th>
                   <th>CI</th>
                   <th>Size</th>
-                  <th>Review rounds</th>
+                  <th>Reviews</th>
+                  <th>Changes requested</th>
                   <th>Churn</th>
                   <th>Time to first review</th>
                   <th>Time to merge</th>
@@ -532,6 +537,7 @@ const App = () => {
                     </td>
                     <td>{pr.ciFailed ? "Failed" : "Clean"}</td>
                     <td>{pr.additions + pr.deletions} / {pr.filesChanged} files</td>
+                    <td>{pr.reviewCount}</td>
                     <td>{pr.reviewRounds}</td>
                     <td>{formatPercent(pr.churnRatio)}</td>
                     <td>{formatHours(pr.timeToFirstReviewHours)}</td>
