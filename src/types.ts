@@ -68,6 +68,7 @@ export type PRMetrics = {
   timeToMergeHours: number | null;
   ciFailed: boolean;
   score: number;
+  scoreBreakdown: ScoreComponent[];
 };
 
 export type WeeklyStat = {
@@ -87,4 +88,14 @@ export type DeltaEntry = {
   before: string | null;
   after: string | null;
   delta: string | null;
+};
+
+export type ScoreComponent = {
+  key: string;
+  label: string;
+  display: string;
+  weight: number;
+  risk: number;
+  penalty: number;
+  note?: string;
 };

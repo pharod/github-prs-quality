@@ -1,9 +1,20 @@
-import type { DeltaEntry, PRMetrics, WeeklyStat } from "./types";
+import type { DeltaEntry, PRMetrics, ScoreComponent, WeeklyStat } from "./types";
 
 const clamp = (value: number, minValue: number, maxValue: number) =>
   Math.max(minValue, Math.min(maxValue, value));
 
-export const scorePr = (metrics: {
+const formatHours = (value: number | null): string => {
+  if (value === null) return "-";
+  if (value < 1) return `${Math.round(value * 60)}m`;
+  return `${value.toFixed(1)}h`;
+};
+
+const formatPercent = (value: number | null): string => {
+  if (value === null) return "-";
+  return `${(value * 100).toFixed(1)}%`;
+};
+
+type ScoreInput = {
   additions: number;
   deletions: number;
   filesChanged: number;
@@ -12,7 +23,9 @@ export const scorePr = (metrics: {
   timeToFirstReviewHours: number | null;
   timeToMergeHours: number | null;
   ciFailed: boolean;
-}): number => {
+};
+
+export const scorePr = (metrics: ScoreInput): number => {
   const size = metrics.additions + metrics.deletions;
   const churn = metrics.churnRatio ?? 0;
 
@@ -51,6 +64,105 @@ export const scorePr = (metrics: {
     ciRisk * weights.ci;
 
   return clamp(100 * (1 - risk), 0, 100);
+};
+
+export const scorePrWithDetails = (metrics: ScoreInput): {
+  score: number;
+  components: ScoreComponent[];
+} => {
+  const size = metrics.additions + metrics.deletions;
+  const churn = metrics.churnRatio ?? 0;
+  const churnMissing = metrics.churnRatio === null;
+  const tfrMissing = metrics.timeToFirstReviewHours === null;
+  const ttmMissing = metrics.timeToMergeHours === null;
+
+  const sizeRisk = clamp(Math.log1p(size) / Math.log1p(2000), 0, 1);
+  const filesRisk = clamp(metrics.filesChanged / 50, 0, 1);
+  const reviewRoundsRisk = clamp(metrics.reviewRounds / 3, 0, 1);
+  const churnRisk = clamp(churn / 0.5, 0, 1);
+  const tfrRisk = tfrMissing ? 0.5 : clamp(metrics.timeToFirstReviewHours! / 72, 0, 1);
+  const ttmRisk = ttmMissing ? 0.5 : clamp(metrics.timeToMergeHours! / 240, 0, 1);
+  const ciRisk = metrics.ciFailed ? 1 : 0;
+
+  const weights = {
+    size: 0.2,
+    files: 0.1,
+    reviewRounds: 0.2,
+    churn: 0.15,
+    tfr: 0.1,
+    ttm: 0.15,
+    ci: 0.1,
+  };
+
+  const components: ScoreComponent[] = [
+    {
+      key: "size",
+      label: "PR size",
+      display: `${size} lines`,
+      weight: weights.size,
+      risk: sizeRisk,
+      penalty: sizeRisk * weights.size * 100,
+    },
+    {
+      key: "files",
+      label: "Files changed",
+      display: `${metrics.filesChanged} files`,
+      weight: weights.files,
+      risk: filesRisk,
+      penalty: filesRisk * weights.files * 100,
+    },
+    {
+      key: "reviewRounds",
+      label: "Changes requested",
+      display: `${metrics.reviewRounds}`,
+      weight: weights.reviewRounds,
+      risk: reviewRoundsRisk,
+      penalty: reviewRoundsRisk * weights.reviewRounds * 100,
+    },
+    {
+      key: "churn",
+      label: "Review churn",
+      display: churnMissing ? "No commit stats" : formatPercent(metrics.churnRatio),
+      weight: weights.churn,
+      risk: churnRisk,
+      penalty: churnRisk * weights.churn * 100,
+      note: churnMissing ? "Defaulted to 0%" : undefined,
+    },
+    {
+      key: "timeToFirstReview",
+      label: "Time to first review",
+      display: tfrMissing ? "No review timestamp" : formatHours(metrics.timeToFirstReviewHours),
+      weight: weights.tfr,
+      risk: tfrRisk,
+      penalty: tfrRisk * weights.tfr * 100,
+      note: tfrMissing ? "Defaulted to 50% risk" : undefined,
+    },
+    {
+      key: "timeToMerge",
+      label: "Time to merge",
+      display: ttmMissing ? "Not merged" : formatHours(metrics.timeToMergeHours),
+      weight: weights.ttm,
+      risk: ttmRisk,
+      penalty: ttmRisk * weights.ttm * 100,
+      note: ttmMissing ? "Defaulted to 50% risk" : undefined,
+    },
+    {
+      key: "ci",
+      label: "CI stability",
+      display: metrics.ciFailed ? "Failed at least once" : "Clean",
+      weight: weights.ci,
+      risk: ciRisk,
+      penalty: ciRisk * weights.ci * 100,
+    },
+  ];
+
+  const totalRisk = components.reduce(
+    (sum, component) => sum + component.risk * component.weight,
+    0
+  );
+  const score = clamp(100 * (1 - totalRisk), 0, 100);
+
+  return { score, components };
 };
 
 export const safeMedian = (values: number[]): number | null => {

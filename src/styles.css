@@ -208,6 +208,8 @@ button:disabled {
 
 .table-wrap {
   overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
 }
 
 table {
@@ -253,6 +255,93 @@ th {
 .badge.bad {
   background: #ffe3e3;
   color: #c92a2a;
+}
+
+.score-cell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.score-cell:hover .score-tooltip {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.score-tooltip {
+  position: absolute;
+  left: 0;
+  top: 26px;
+  width: min(320px, 70vw);
+  background: #1f1b16;
+  color: #fff9ef;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 12px 28px rgba(12, 10, 8, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 10;
+}
+
+.tooltip-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.tooltip-subtitle {
+  font-size: 12px;
+  color: rgba(255, 249, 239, 0.7);
+  margin-bottom: 10px;
+}
+
+.tooltip-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tooltip-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  font-size: 12px;
+}
+
+.tooltip-label {
+  font-weight: 600;
+}
+
+.tooltip-value {
+  justify-self: end;
+  color: rgba(255, 249, 239, 0.8);
+}
+
+.tooltip-penalty {
+  color: #ffd8a8;
+  font-weight: 600;
+}
+
+.tooltip-weight {
+  justify-self: end;
+  font-size: 11px;
+  color: rgba(255, 249, 239, 0.6);
+}
+
+.tooltip-note {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: rgba(255, 249, 239, 0.6);
+}
+
+.tooltip-footer {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255, 249, 239, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
 }
 
 .empty {

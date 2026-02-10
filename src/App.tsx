@@ -27,7 +27,7 @@ import {
   buildDeltas,
   buildWeeklyStats,
   computeChurnRatio,
-  scorePr,
+  scorePrWithDetails,
 } from "./metrics";
 import type { PRMetrics, RepoSummary } from "./types";
 import { formatHours, formatPercent, runWithConcurrency } from "./utils";
@@ -221,7 +221,7 @@ const App = () => {
           (review) => review.userLogin !== author && review.submittedAt
         ).length;
 
-        const score = scorePr({
+        const { score, components: scoreBreakdown } = scorePrWithDetails({
           additions: details.additions,
           deletions: details.deletions,
           filesChanged: details.changedFiles,
@@ -248,6 +248,7 @@ const App = () => {
           timeToMergeHours,
           ciFailed,
           score,
+          scoreBreakdown,
         } satisfies PRMetrics;
       });
 
@@ -531,9 +532,35 @@ const App = () => {
                     </td>
                     <td>{pr.author}</td>
                     <td>
-                      <span className={`badge ${pr.score >= 85 ? "good" : pr.score >= 70 ? "warn" : "bad"}`}>
-                        {pr.score.toFixed(1)}
-                      </span>
+                      <div className="score-cell">
+                        <span className={`badge ${pr.score >= 85 ? "good" : pr.score >= 70 ? "warn" : "bad"}`}>
+                          {pr.score.toFixed(1)}
+                        </span>
+                        <div className="score-tooltip">
+                          <div className="tooltip-title">Score breakdown</div>
+                          <div className="tooltip-subtitle">
+                            Penalty shows how much each signal reduced the score.
+                          </div>
+                          <div className="tooltip-grid">
+                            {pr.scoreBreakdown.map((component) => (
+                              <div className="tooltip-row" key={component.key}>
+                                <div className="tooltip-label">{component.label}</div>
+                                <div className="tooltip-value">{component.display}</div>
+                                <div className="tooltip-penalty">-{component.penalty.toFixed(1)}</div>
+                                <div className="tooltip-weight">
+                                  wt {Math.round(component.weight * 100)}%
+                                </div>
+                                {component.note ? (
+                                  <div className="tooltip-note">{component.note}</div>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="tooltip-footer">
+                            Total score: {pr.score.toFixed(1)}
+                          </div>
+                        </div>
+                      </div>
                     </td>
                     <td>{pr.ciFailed ? "Failed" : "Clean"}</td>
                     <td>{pr.additions + pr.deletions} / {pr.filesChanged} files</td>
