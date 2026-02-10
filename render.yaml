@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: github-prs-quality
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
