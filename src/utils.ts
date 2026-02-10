@@ -1,7 +1,7 @@
 export const runWithConcurrency = async <T, R>(
   items: T[],
   limit: number,
-  worker: (item: T) => Promise<R>
+  worker: (item: T, index: number) => Promise<R>
 ): Promise<R[]> => {
   const results: R[] = [];
   let index = 0;
@@ -9,7 +9,7 @@ export const runWithConcurrency = async <T, R>(
   const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (index < items.length) {
       const currentIndex = index++;
-      results[currentIndex] = await worker(items[currentIndex]);
+      results[currentIndex] = await worker(items[currentIndex], currentIndex);
     }
   });
 
