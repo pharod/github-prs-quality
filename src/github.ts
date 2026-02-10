@@ -8,7 +8,7 @@ import type {
   Review,
 } from "./types";
 
-const API_BASE = "https://api.github.com";
+const API_BASE = "/api";
 
 const TTL = {
   repos: 6 * 60 * 60 * 1000,
@@ -25,7 +25,8 @@ const parseLinkHeader = (link: string | null): string | null => {
   for (const part of parts) {
     if (part.includes('rel="next"')) {
       const match = part.match(/<([^>]+)>/);
-      return match ? match[1] : null;
+      if (!match) return null;
+      return match[1].replace("https://api.github.com", API_BASE);
     }
   }
   return null;

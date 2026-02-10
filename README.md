@@ -14,6 +14,14 @@ npm run build
 npm run preview
 ```
 
+## Render deploy (no CORS)
+This app uses a lightweight Node proxy to avoid GitHub CORS issues in production.
+Render should run it as a Node web service:
+
+- Build command: `npm install && npm run build`
+- Start command: `npm run start`
+- Publish directory: not used (served by `server.js`)
+
 ## How it works
 - The app requests a GitHub token (stored locally in localStorage or sessionStorage).
 - You can pick any repo you have access to (user + org repos).
