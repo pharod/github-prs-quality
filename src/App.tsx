@@ -188,6 +188,28 @@ const App = () => {
 
         const churnRatio = computeChurnRatio(commitStats, firstReviewAt);
 
+        const isNonAuthorCommit = (commit: typeof commitStats[number]) => {
+          if (commit.authorLogin) {
+            return commit.authorLogin.toLowerCase() !== author.toLowerCase();
+          }
+          if (commit.authorName) {
+            return commit.authorName.toLowerCase() !== author.toLowerCase();
+          }
+          return false;
+        };
+
+        const commitsAfterReview = firstReviewAt
+          ? commitStats.filter((commit) => {
+              if (!commit.committedAt) return false;
+              return new Date(commit.committedAt) > firstReviewAt;
+            })
+          : [];
+
+        const reviewerCommitCount = commitsAfterReview.filter(isNonAuthorCommit).length;
+        const reviewerCommitRatio = commitsAfterReview.length
+          ? reviewerCommitCount / commitsAfterReview.length
+          : null;
+
         const ciFlags = await runWithConcurrency(limitedCommits, 4, async (commit) => {
           const [runs, status] = await Promise.all([
             fetchCheckRuns(token, selectedRepo, commit.sha),
@@ -226,6 +248,7 @@ const App = () => {
           deletions: details.deletions,
           filesChanged: details.changedFiles,
           reviewRounds,
+          reviewerCommitCount,
           churnRatio,
           timeToFirstReviewHours,
           timeToMergeHours,
@@ -243,6 +266,8 @@ const App = () => {
           filesChanged: details.changedFiles,
           reviewRounds,
           reviewCount,
+          reviewerCommitCount,
+          reviewerCommitRatio,
           churnRatio,
           timeToFirstReviewHours,
           timeToMergeHours,
@@ -517,6 +542,7 @@ const App = () => {
                   <th>Size</th>
                   <th>Reviews</th>
                   <th>Changes requested</th>
+                  <th>Reviewer commits</th>
                   <th>Churn</th>
                   <th>Time to first review</th>
                   <th>Time to merge</th>
@@ -566,6 +592,7 @@ const App = () => {
                     <td>{pr.additions + pr.deletions} / {pr.filesChanged} files</td>
                     <td>{pr.reviewCount}</td>
                     <td>{pr.reviewRounds}</td>
+                    <td>{pr.reviewerCommitCount}</td>
                     <td>{formatPercent(pr.churnRatio)}</td>
                     <td>{formatHours(pr.timeToFirstReviewHours)}</td>
                     <td>{formatHours(pr.timeToMergeHours)}</td>

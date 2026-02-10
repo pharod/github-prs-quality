@@ -214,6 +214,8 @@ export const fetchCommitStats = async (
     additions: commit.stats?.additions ?? 0,
     deletions: commit.stats?.deletions ?? 0,
     committedAt: commit.commit?.committer?.date ?? null,
+    authorLogin: commit.author?.login ?? null,
+    authorName: commit.commit?.author?.name ?? null,
   };
 };
 

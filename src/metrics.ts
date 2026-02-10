@@ -19,6 +19,7 @@ type ScoreInput = {
   deletions: number;
   filesChanged: number;
   reviewRounds: number;
+  reviewerCommitCount: number;
   churnRatio: number | null;
   timeToFirstReviewHours: number | null;
   timeToMergeHours: number | null;
@@ -28,10 +29,12 @@ type ScoreInput = {
 export const scorePr = (metrics: ScoreInput): number => {
   const size = metrics.additions + metrics.deletions;
   const churn = metrics.churnRatio ?? 0;
+  const reviewerIntervention = metrics.reviewerCommitCount > 0 ? 1 : 0;
+  const effectiveReviewRounds = metrics.reviewRounds + reviewerIntervention;
 
   const sizeRisk = clamp(Math.log1p(size) / Math.log1p(2000), 0, 1);
   const filesRisk = clamp(metrics.filesChanged / 50, 0, 1);
-  const reviewRoundsRisk = clamp(metrics.reviewRounds / 3, 0, 1);
+  const reviewRoundsRisk = clamp(effectiveReviewRounds / 3, 0, 1);
   const churnRisk = clamp(churn / 0.5, 0, 1);
 
   const tfrRisk = metrics.timeToFirstReviewHours === null
@@ -114,10 +117,13 @@ export const scorePrWithDetails = (metrics: ScoreInput): {
     {
       key: "reviewRounds",
       label: "Changes requested",
-      display: `${metrics.reviewRounds}`,
+      display: `${effectiveReviewRounds}`,
       weight: weights.reviewRounds,
       risk: reviewRoundsRisk,
       penalty: reviewRoundsRisk * weights.reviewRounds * 100,
+      note: reviewerIntervention
+        ? `Includes +${reviewerIntervention} for reviewer commits after review`
+        : undefined,
     },
     {
       key: "churn",

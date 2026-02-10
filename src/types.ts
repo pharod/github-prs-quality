@@ -42,6 +42,8 @@ export type CommitStats = {
   additions: number;
   deletions: number;
   committedAt: string | null;
+  authorLogin: string | null;
+  authorName: string | null;
 };
 
 export type CheckRun = {
@@ -63,6 +65,8 @@ export type PRMetrics = {
   filesChanged: number;
   reviewRounds: number;
   reviewCount: number;
+  reviewerCommitCount: number;
+  reviewerCommitRatio: number | null;
   churnRatio: number | null;
   timeToFirstReviewHours: number | null;
   timeToMergeHours: number | null;
